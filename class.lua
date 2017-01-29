@@ -42,18 +42,7 @@ local function newInstance(klass, ...)
     local instance    = klass.__type.instance
     local instanceMt = klass.__type.instanceMt
 
-    local base = klass.__type.base 
-    local obj
-
-    -- Populate base instance tree
-    while base ~= nil do
-        base.__type.baseInstance = 
-            setmetatable(base.__type.instance,
-                         base.__type.instanceMt)
-        base = base.__type.base
-    end
-
-    obj = setmetatable(instance, instanceMt)
+    local obj = setmetatable(instance, instanceMt)
 
     if type(obj[klass.__type.name]) == "function" then
         obj[klass.__type.name](obj, ...)
@@ -63,9 +52,9 @@ local function newInstance(klass, ...)
 end
 
 function class(name, base)
-    local klass       = {}
+    local klass      = {}
     local klassMt    = {}
-    local instance    = {}
+    local instance   = {}
     local instanceMt = {}
 
     local static = {}
@@ -94,13 +83,13 @@ function class(name, base)
         return false
     end
     function instanceMt:__index(k)
-        local v = rawget(self, k)
-        
-        if v == nil and self.__type.baseInstance ~= nil then
-            v = self.__type.baseInstance[k]
-        end
+        local v    = rawget(self, k)
+        local base = rawget(self, "__type").base
 
-        return v
+        if v ~= nil then return v end
+        if base ~= nil then
+            return base.__type.instanceMt.__index(base.__type.instance, k)
+        end
     end
 
     for _, metamethod in pairs(metamethods) do
